@@ -10,7 +10,7 @@
   (if (null rule) 
     t
     (if (listp (car rule))
-      (if (checkValidRules facts rules (car rule))
+      (if (parseList facts rules (car rule))
           (andHandler facts rules (cdr rule))
           nil)
       (if (prove? (car rule) facts rules)
@@ -21,7 +21,7 @@
   (if (null rule) 
     nil
     (if (listp (car rule))
-      (if (checkValidRules facts rules (car rule))
+      (if (parseList facts rules (car rule))
         t
         (orHandler facts rules (cdr rule)))
       (if (prove? (car rule) facts rules)
@@ -31,32 +31,27 @@
 
 (defun notHandler (facts rules rule)
   (if (listp (car rule))
-    (if (checkValidRules (car rules))
+    (if (parseList facts rules (car rule))
         nil
         t)
     (if (prove? (car rule) facts rules)
       nil
       t)))
 
+(defun parseList (facts rules lst)
+  (if (eql (car lst) 'and)
+    (andHandler facts rules (cdr lst))
+    (if (eql (car lst) 'or)
+      (orHandler facts rules (cdr lst))
+      (if (eql (car lst) 'not)
+        (notHandler facts rules (cdr lst))
+        (prove? (car lst) facts rules)))))
+
 (defun checkValidRules (facts rules validRules)
   (if (null validRules)
     nil
-    (if (eql (caaar validRules) 'and)
-        (if (andHandler facts rules (cdaar validRules))
-          t
-          (checkValidRules facts rules (cdr validRules)))
-        (if (eql (caaar validRules) 'or)
-          (if (orHandler facts rules (cdaar validRules))
-            t
-           (checkValidRules facts rules (cdr validRules)))
-          (if (eql (caaar validRules) 'not)
-            (if (notHandler facts rules (cdr validRules))
-              t
-              (checkValidRules facts rules (cdr validRules)))
-            (if (prove? (car validRules) facts rules)
-              t
-              (checkValidRules facts rules (cdr validRules)))
-          )))))
+    (or (parseList facts rules (caar validRules))
+        (checkValidRules facts rules (cdr validRules)))))
 
 
 (defun prove? (toProve facts rules)
