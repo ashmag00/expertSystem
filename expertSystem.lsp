@@ -50,13 +50,21 @@
 (defun checkValidRules (facts rules validRules)
   (if (null validRules)
     nil
-    (or (parseList facts rules (caar validRules))
-        (checkValidRules facts rules (cdr validRules)))))
+    (if (parseList facts rules (caar validRules))
+      (progn 
+        (format t "~A is true.~%" (car validRules))
+        t)
+      (checkValidRules facts rules (cdr validRules))
+        
+        )))
 
 
 (defun prove? (toProve facts rules)
   (if (member toProve facts)
-    T
+    (progn 
+        (format t "~A is a fact.~%" toProve)
+        t)
+
     (checkValidRules facts rules (proveRules toProve rules))))
 
 (setf facts '(A B C))
