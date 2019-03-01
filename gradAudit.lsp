@@ -1,15 +1,44 @@
+(setf myMajorHours 0)
+
+(defun transcriptLst (lst) 
+  (if (not(null lst))
+    (cons (caar lst) (transcriptLst (cdr lst ))) 
+    ()
+    ) )
 
 
+(defun classLst(person)
+    (append (transcriptLst (cdar person)) (cdadr person))
+)
+
+(defun orCheck(lst classLst)
+  (if (null lst)
+    nil
+    (or (member (car lst) classLst) (orCheck (cdr lst) classLst))
+  ))
+
+
+(defun checkRequired(required classLst)
+  (if (null required)
+    t
+    (if (listp (car required))
+      (and (orCheck (cdar required) classLst) (checkRequired (cdr required) classLst))
+      (and (member (car required) classLst) (checkRequired (cdr required) classLst)))))
+
+(defun checkElectives()
+  
+)
 
 
 
 (defun grad-check (person degree-requirements catalog)
-       
+    (checkRequired (cdadr degree-requirements) (classLst person))
+    
 )
 
 (setf person '((transcript 
  (COS102 A-) (COS109 A) (COS120 B) (COS121 B+) (COS143 A-) (COS243 B+) (COS265 B) (COS284 B-) (MAT151 A-) (MAT210 B))
- (plan COS492 COS493 COS280 COS331 COS340 COS350 SYS214 SYS411 MAT215)) )
+ (plan COS492 COS493 COS280 COS331 COS340 COS350 SYS214 SYS411 MAT215 COS311 COS320 COS393)) )
 
 (setf degree-requirements '((major-hours 64)
  (required COS102 COS120 COS121 COS143 COS243 COS265 COS284 COS492 COS493 MAT151 MAT215
