@@ -1,43 +1,51 @@
-(setf myMajorHours 0)
-
 (defun transcriptLst (lst) 
   (if (not(null lst))
-    (cons (caar lst) (transcriptLst (cdr lst ))) 
-    ()
-    ) )
-
+    (if (gradeCheck(car lst))
+      (cons (caar lst) (transcriptLst (cdr lst ))) 
+      (transcriptLst (cdr lst)))
+    ()))
 
 (defun classLst(person)
-    (append (transcriptLst (cdar person)) (cdadr person))
-)
+    (append (transcriptLst (cdar person)) (cdadr person)))
 
-(defun orCheck(lst classLst)
+(defun gradeCheck(transClass)
+  (case (cadr transClass)
+    ((A A- B+ B B- C+ C C-) t)
+    (otherwise nil)))
+
+(defun orCheck(lst)
   (if (null lst)
     nil
-    (or (member (car lst) classLst) (orCheck (cdr lst) classLst))
-  ))
+    (or (member (car lst) classPlan) (orCheck (cdr lst)))))
 
+(defun findHours(className catalog)
+  (if (null catalog)
+    0
+    (if (member className (car catalog))
+      (cadar catalog)
+      (findHours className (cdr catalog)))))
 
-(defun checkRequired(required classLst)
+(defun checkRequired(required)
   (if (null required)
     t
     (if (listp (car required))
-      (and (orCheck (cdar required) classLst) (checkRequired (cdr required) classLst))
-      (and (member (car required) classLst) (checkRequired (cdr required) classLst)))))
+      (and (orCheck (cdar required)) (checkRequired (cdr required)))
+      (and (member (car required) classPlan) (checkRequired (cdr required))))))
 
-(defun checkElectives()
-  
-)
-
-
+(defun checkElectives(elective)
+  (if (null elective)
+    t
+    (and (member (car elective) classPlan) (checkElectives (cdr elective)))))
 
 (defun grad-check (person degree-requirements catalog)
-    (checkRequired (cdadr degree-requirements) (classLst person))
-    
+  (setf classPlan (classLst person))
+  (setf remainingHours (cadar degree-requirements))
+  (if (checkRequired (cdadr degree-requirements))
+    (checkElectives (cdaddr degree-requirements)))
 )
 
 (setf person '((transcript 
- (COS102 A-) (COS109 A) (COS120 B) (COS121 B+) (COS143 A-) (COS243 B+) (COS265 B) (COS284 B-) (MAT151 A-) (MAT210 B))
+ (COS102 B-) (COS109 A) (COS120 B) (COS121 B+) (COS143 A-) (COS243 B+) (COS265 B) (COS284 B-) (MAT151 A-) (MAT210 B))
  (plan COS492 COS493 COS280 COS331 COS340 COS350 SYS214 SYS411 MAT215 COS311 COS320 COS393)) )
 
 (setf degree-requirements '((major-hours 64)
