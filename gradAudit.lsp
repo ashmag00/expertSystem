@@ -27,25 +27,34 @@
 
 (defun checkRequired(required)
   (if (null required)
-    t
+    ()
     (if (listp (car required))
-      (and (orCheck (cdar required)) (checkRequired (cdr required)))
-      (and (member (car required) classPlan) (checkRequired (cdr required))))))
+      (if (orCheck (cdar required))
+        (checkRequired (cdr required))
+        (cons (car required) (checkRequired (cdr required))))
+      (if (member (car required) classPlan)
+        (checkRequired (cdr required))
+        (cons (car required) (checkRequired (cdr required)))))))
 
 (defun checkElectives(elective)
   (if (null elective)
     t
     (and (member (car elective) classPlan) (checkElectives (cdr elective)))))
 
+(defun checkHours (classPlan catalog) 
+  (if (null classPlan)
+    0
+    (+ (findHours (car classPlan) catalog) (checkHours (cdr classPlan) catalog))))
+
 (defun grad-check (person degree-requirements catalog)
   (setf classPlan (classLst person))
-  (setf remainingHours (cadar degree-requirements))
-  (if (checkRequired (cdadr degree-requirements))
-    (checkElectives (cdaddr degree-requirements)))
-)
+  (setf neededHours (cadar degree-requirements))
+  (setf remainingClasses (checkRequired (cdadr degree-requirements)))
+  (setf remainingHours (- neededHours (checkHours classPlan catalog)))
+  (values (and (null remainingClasses) (<= remainingHours 0)) remainingClasses (if (< remainingHours 0) 0 remainingHours)))
 
 (setf person '((transcript 
- (COS102 B-) (COS109 A) (COS120 B) (COS121 B+) (COS143 A-) (COS243 B+) (COS265 B) (COS284 B-) (MAT151 A-) (MAT210 B))
+ (COS109 A) (COS120 B) (COS121 B+) (COS143 A-) (COS243 B+) (COS265 B) (COS284 B-) (MAT151 A-))
  (plan COS492 COS493 COS280 COS331 COS340 COS350 SYS214 SYS411 MAT215 COS311 COS320 COS393)) )
 
 (setf degree-requirements '((major-hours 64)
