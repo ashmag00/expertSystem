@@ -1,11 +1,13 @@
 ;Init and main function
 (defun tic-tac-toe ()
   (setf board (make-array '(3 3) :initial-element nil))
+  (setf currentPlayer 1)
   ;TODO: Who plays first?
   ;Game Loop
-  (do ((x 0 (+ x 1))) ((detectWin) 'done)
-    (setf (aref board (askForMove)) (retrievePlayer))
-    (showBoard)))
+  (do ((x 0 (+ x 1))) ((or (detectWin) (detectDraw)) 'done)
+    (multiple-value-bind (a b) (askForMove) (setf (aref board a b) currentPlayer))
+    (showBoard)
+    (switchPlayer)))
 ;Detect a finished board
 (defun detectWin ()
   (setf win nil)
@@ -28,14 +30,29 @@
       (setf win t)))
   ;return
   win)
-        
+(defun detectDraw ()
+  (setf draw t)
+  (do ((i 0 (+ i 1))) ((or (equal i 3) (not draw)) draw)
+    (do ((j 0 (+ j 1))) ((or (equal j 3) (not draw)) draw)
+        (if (equal nil (aref board i j))
+          (setf draw nil)))))
 
 ;Retrieve input data from player
 (defun askForMove ()
   (format t "Enter move 'ROW COLUMN': ")
   (let ((x(read-line)))
-  (list (- (char-int (char x 0)) 48) (- (char-int (char x 2)) 48))))
+  (values (- (char-int (char x 0)) 48) (- (char-int (char x 2)) 48))))
+
 ;Determine which player just made a move
-;(defun retrievePlayer)
+(defun switchPlayer ()
+    (if (equal 1 currentPlayer)
+      (setf currentPlayer 2)
+      (setf currentPlayer 1))
+  )
 ;Print out board
-;(defun showBoard)
+(defun showBoard ()
+  (format t "~A|~A|~A~%" (aref board 0 0)(aref board 0 1)(aref board 0 2))
+  (format t "-----------~%")
+  (format t "~A|~A|~A~%" (aref board 1 0)(aref board 1 1)(aref board 1 2))
+  (format t "-----------~%")
+  (format t "~A|~A|~A~%" (aref board 2 0)(aref board 2 1)(aref board 2 2)))
