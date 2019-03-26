@@ -33,7 +33,8 @@
 ;Retrieve input data from player
 (defun askForMove ()
   (format t "Enter move 'ROW COLUMN': ")
-  (read-from-string (read-line))
+  (let ((x(read-line)))
+  (list (- (char-int (char x 0)) 48) (- (char-int (char x 2)) 48))))
 ;Determine which player just made a move
 ;(defun retrievePlayer)
 ;Print out board
