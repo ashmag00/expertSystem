@@ -9,7 +9,9 @@
      (multiple-value-bind (a b) (askForMove) (setf (aref board a b) currentPlayer))
      (multiple-value-bind (a b) (aiMove) (setf (aref board a b) currentPlayer)))
     (showBoard)
-    (switchPlayer)))
+    (setf currentPlayer (switchPlayer currentPlayer))
+    
+    ))
 ;Detect a finished board
 (defun detectWin ()
   (setf win nil)
@@ -51,10 +53,10 @@
   (values (- (char-int (char x 0)) 48) (- (char-int (char x 2)) 48))))
 
 ;Determine which player just made a move
-(defun switchPlayer ()
-    (if (equal 1 currentPlayer)
-      (setf currentPlayer 2)
-      (setf currentPlayer 1)))
+(defun switchPlayer (player)
+    (if (equal 1 player)
+      2
+      1))
 
 ;Print out board
 (defun showBoard ()
@@ -67,22 +69,46 @@
 ;AI
 ;Node struct for the tree
 (defstruct node gameBoard score children)
+
 ;AI movement decision
 (defun aiMove ()
-  (buildTree (board currentPlayer)))
+  (let ((currentNode (make-node :gameBoard board :score 0 :children ())) (myPlayer currentPlayer)) 
+    (buildTree myBoard myPlayer currentNode)
+    currentNode
+    )
+  )
+
 ;Build a search tree for possible game states
-(defun buildTree (myBoard player)
+(defun buildTree (myBoard player currentNode)
   (multiple-value-bind (w p) (detectWin)
     (if w
       (if (equal p 1)
-        (make-node :gameBoard myBoard :score -1 :children ())
-        (make-node :gameBoard myBoard :score 1 :children ()))
+        (setf (node-children currentNode) (cons (make-node :gameBoard myBoard :score -1 :children ()) (node-children currentNode)))
+        (setf (node-children currentNode) (cons (make-node :gameBoard myBoard :score 1 :children ()) (node-children currentNode))))
       (if (detectDraw)
-        (make-node :gameBoard myBoard :score 0 :children ())
+        (setf (node-children currentNode) (cons (make-node :gameBoard myBoard :score 0 :children ()) (node-children currentNode)))
         (progn
-          (setf curNode (make-node :gameBoard myBoard :score nil :children nil))
           (do ((i 0 (+ i 1))) ((equal i 3) 'done)
             (do ((j 0 (+ j 1))) ((equal j 3) 'done)
               (if (equal (aref myBoard i j) nil)
-                ;TODO: FIXME!!!!
-                (curNode-children (cons (buildTree)))
+                (progn
+                (setf (aref myBoard i j) (switchPlayer player))
+                (setf (node-children currentNode) (cons (make-node :gameBoard myBoard :score nil :children ()) (node-children currentNode)))
+                (buildTree myBoard (switchPlayer player) (car (node-children currentNode)))
+                (setf (node-score currentNode) (nodeScore currentNode 0)))
+                ))))))))
+
+;return the score of a node
+(defun nodeScore (myNode total)
+  (if (not (equal (node-score myNode) nil))
+    (+ (node-score myNode) total)
+    ;sum score of children
+    (dolist (x (node-children myNode) total)
+        (+ (nodeScore x total) total))))
+
+;creates a deep copy of the board, however causes stack overflow error when used in buildTree
+(defun copyBoard ()
+  (setf myBoard (make-array '(3 3) :initial-element nil))
+    (do ((i 0 (+ i 1))) ((equal i 3) myBoard)
+        (do ((j 0 (+ j 1))) ((equal j 3) 'done)
+            (setf (aref myBoard i j) (aref board i j)))))
