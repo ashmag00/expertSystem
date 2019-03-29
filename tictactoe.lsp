@@ -1,7 +1,9 @@
 ;Init and main function
+(setf board nil)
+
 (defun tic-tac-toe ()
+
   (setf board (make-array '(3 3) :initial-element nil))
-    ;TODO: Who plays first?
   (format t "Who goes first? (h or c)")
   (let ((p (read-line)))
   (cond
@@ -17,7 +19,7 @@
     ((t) (setf memoization t))
     ))
   ;Game Loop
-  (do ((x 0 (+ x 1))) ((or (detectWin) (detectDraw)) 'done)
+  (do ((x 0 (+ x 1))) ((or (detectWin board) (detectDraw board)) 'done)
     (if (equal currentPlayer 1)
      (multiple-value-bind (a b) (askForMove) (setf (aref board a b) currentPlayer))
      (multiple-value-bind (a b) (aiMove) (setf (aref board a b) currentPlayer)))
@@ -26,7 +28,7 @@
     
     ))
 ;Detect a finished board
-(defun detectWin ()
+(defun detectWin (board)
   (setf win nil)
   (setf winner nil)
   ;check rows
@@ -52,7 +54,7 @@
              (setf winner (aref board 0 2)))))
   ;return
   (values win winner))
-(defun detectDraw ()
+(defun detectDraw (board)
   (setf draw t)
   (do ((i 0 (+ i 1))) ((or (equal i 3) (not draw)) draw)
     (do ((j 0 (+ j 1))) ((or (equal j 3) (not draw)) draw)
@@ -87,32 +89,38 @@
 (defun aiMove ()
   (makeMyboard)
   (let ((currentNode (make-node :gameBoard (copyBoard) :score 0 :children ())) (myPlayer currentPlayer)) 
-    (buildTree myBoard myPlayer currentNode)
+    (buildTree myBoard myPlayer currentNode 0)
     ;pick child with best score
     )
   )
 
 ;Build a search tree for possible game states
-(defun buildTree (myBoard player currentNode)
+(defun buildTree (myBoard player currentNode depth)
   ;if memoization is on, search tree here, if node is found make that node the current node and return
-  (multiple-value-bind (w p) (detectWin)
+  (format t "~A~%" depth)
+  (multiple-value-bind (w p) (detectWin myBoard)
     (if w
       (if (equal p 1)
-        (setf (node-children currentNode) (cons (make-node :gameBoard (copyBoard) :score -1 :children ()) (node-children currentNode)))
-        (setf (node-children currentNode) (cons (make-node :gameBoard (copyBoard) :score 1 :children ()) (node-children currentNode))))
-      (if (detectDraw)
-        (setf (node-children currentNode) (cons (make-node :gameBoard (copyBoard) :score 0 :children ()) (node-children currentNode)))
+        ;(setf (node-children currentNode) (cons (make-node :gameBoard (copyBoard) :score -1 :children ()) (node-children currentNode)))
+        (setf (node-score currentNode) -1)
+        ;(setf (node-children currentNode) (cons (make-node :gameBoard (copyBoard) :score 1 :children ()) (node-children currentNode))))
+        (setf (node-score currentNode) 1))
+      (if (detectDraw myBoard)
+       ;(setf (node-children currentNode) (cons (make-node :gameBoard (copyBoard) :score 0 :children ()) (node-children currentNode)))
+        (setf (node-score currentNode) 0)
         (progn
           (do ((i 0 (+ i 1))) ((equal i 3) 'done)
             (do ((j 0 (+ j 1))) ((equal j 3) 'done)
               (if (equal (aref myBoard i j) nil)
                 (progn
-                (setf (aref myBoard i j) (switchPlayer player))
-                (setf (node-children currentNode) (cons (make-node :gameBoard (copyBoard) :score nil :children ()) (node-children currentNode)))
-                (buildTree myBoard (switchPlayer player) (car (node-children currentNode)))
-				(hashToBoard (node-gameBoard currentNode))
-               ; (setf (node-score currentNode) (nodeScore currentNode 0)))
-                )))))))))
+                  (setf (aref myBoard i j) (switchPlayer player))
+                  (setf (node-children currentNode) (cons (make-node :gameBoard (copyBoard) :score nil :children ()) (node-children currentNode)))
+                  (format t "~A~%" myBoard)
+                  (buildTree myBoard (switchPlayer player) (car (node-children currentNode)) (+ 1 depth))
+                  (format t "~A~%" myBoard)
+                  (hashToBoard (node-gameBoard currentNode))
+                  ; (setf (node-score currentNode) (nodeScore currentNode 0)))
+                  )))))))))
 
 ;return the score of a node
 (defun nodeScore (myNode total)
@@ -122,18 +130,36 @@
     (dolist (x (node-children myNode) total)
         (+ (nodeScore x total) total))))
 
+#|
 (defun copyBoard ()
-  (setf a 0)
+  (let ((a 0))
     (do ((i 0 (+ i 1))) ((equal i 3) a)
         (do ((j 0 (+ j 1))) ((equal j 3) 'done)
             (setf a (+ (* 10 a) (if (equal (aref myBoard i j) nil) 0 (aref myBoard i j)))))))
+|#
+(defun copyBoard ()
+  (let ((a ""))
+    (do ((i 0 (+ i 1))) ((equal i 3) a)
+        (do ((j 0 (+ j 1))) ((equal j 3) 'done)
+            (setf a (concatenate 'string a (if (equal (aref myBoard i j) nil) "-" (format nil "~A" (aref myBoard i j)))))))))
 
+#|
 (defun hashToBoard (hashNum)
+  (format t "~A~%" hashNum)
 	(let ((hash (int-to-list hashNum)))
 	(do ((i 0 (+ i 1))) ((equal i 3) 'done)
     	(do ((j 0 (+ j 1))) ((equal j 3) 'done)
 			(setf (aref myBoard i j) (if (equal (nth (+ (* i 3) j) hash) 0) nil (nth (+ (* i 3)) hash)))))))
+|#
 
+(defun hashToBoard (hashNum)
+	(let ((hash (string-to-list hashNum)))
+	(do ((i 0 (+ i 1))) ((equal i 3) 'done)
+    	(do ((j 0 (+ j 1))) ((equal j 3) 'done)
+			(setf (aref myBoard i j) (if (equal (nth (+ (* i 3) j) hash) -3) nil (nth (+ (* i 3)) hash)))))))
+
+
+#|
 ;Found at stackoverflow
 (defun int-to-list (int)
   (assert (>= int 0) nil "Argument must be non-negative")
@@ -145,6 +171,18 @@
              (push remainder result)
              (setf int divisor))
          finally (return result))))
+|#
+
+(defun string-to-list (str)
+  (let ((lst nil)(ch nil))
+    (do ((i 0 (+ i 1))) ((equal i 3) 'done)
+      (do ((j 0 (+ j 1))) ((equal j 3) 'done)
+        (setf ch (- (char-int (aref str (+ (* i 3) j))) 48))
+        (setf lst (append lst 
+                          (if (eql ch -3)
+                            (list nil)
+                            (list ch))))))
+    lst))
 
 (defun makeMyboard ()
 	(setf myBoard (make-array '(3 3) :initial-element nil))
