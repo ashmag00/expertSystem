@@ -1,17 +1,21 @@
+#when you run this program the program will ask you if you want to run the template-based-generator or the grammar-based-generator
 import random
 
 grammar = {
     "sentence":[("init", "VP")],
     "NP":[("det", "N"), ("det", "adj", "N")],
-    "VP":[("V"), ("V", "adV"), ("V", "NP"), ("adV", "V"), ("adV", "V", "NP")],
-    "init":["Our mission is to", "Our company's goal is to"],
+    "VP":[("V"), ("V", "adV"), ("V", "NP"), ("adV", "V"), ("adV", "V", "NP"), ("VP", "and", "VP")],
+    "init":[("self", "MO", "trans")],
+    "self":["Our", "Our company's", "Our organization's", "My", "My organization's"],
+    "MO":["mission", "goal", "vision", "desire", "wish"],
+    "trans":["has always been to", "is to", "will be to", "has been to", "will always be to"],
     #"N":["farm", "child", "plan", "client's need"],
-    "N":["farms", "children", "plans", "clients' needs"],
-    #"det":["the", "our", "a", "their", "your"],
+    "N":["farms", "clients", "plans", "clients' needs", "problems"],
+    #"det(S)":["the", "our", "a", "their", "your"],
     "det":["the", "our", "all", "those", "their"],
-    "V": ["help", "inspire", "craft", "drive", "aggregate", "compile"],
-    "adj": ["poor", "sick", "disordered", "clean", "friendly", "nice"],
-    "adV": ["creatively", "effeciently", "quickly", "correctly", "cleanly"]
+    "V":["help", "inspire", "craft", "drive", "aggregate", "compile"],
+    "adj":["prosperous", "orderly", "clean", "friendly", "nice"],
+    "adV":["creatively", "effeciently", "quickly", "correctly", "cleanly"]
 }
 
 def generation(token):
@@ -23,6 +27,7 @@ def generation(token):
         finishedPhrase = ""
         for phrase in token:
             finishedPhrase += generation(phrase) + " "
+        finishedPhrase = finishedPhrase[:-1]
         return finishedPhrase
     return token
 
@@ -71,10 +76,10 @@ def template():
 def main():
     while True:
         chosenGenerator = input("Which generator do you want? (T or G): ")
-        if chosenGenerator == "T":
+        if chosenGenerator == "T" or  chosenGenerator == "t":
             template()
             break
-        elif chosenGenerator == "G":
+        elif chosenGenerator == "G" or chosenGenerator == "g":
             print(generation("sentence"))
             break
     
