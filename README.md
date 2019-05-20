@@ -1,3 +1,3 @@
 # expertSystem
-Basic expert system interface for COS280
+Collection of various projects from Intro to AI
 
